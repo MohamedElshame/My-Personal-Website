@@ -1,12 +1,14 @@
 [build]
-  command = "npm run build"
+  command = "npm install && npm run build"
   publish = ".next"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
+# تحديد إصدار Node.js
 [build.environment]
-  NEXT_USE_NETLIFY_EDGE = "true"
+  NODE_VERSION = "18.17.0"
+  NPM_FLAGS = "--legacy-peer-deps"
 
 # إعدادات إضافية لتحسين الأداء
 [[headers]]
