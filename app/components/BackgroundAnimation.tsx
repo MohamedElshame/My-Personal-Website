@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 
 export function BackgroundAnimation() {
-  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const animationFrameRef = useRef<number>(0)
   const particlesRef = useRef<Particle[]>([])
@@ -45,9 +45,12 @@ export function BackgroundAnimation() {
       // Removed many complex properties to improve performance
 
       constructor() {
-        this.x = Math.random() * canvas.width
-        this.y = Math.random() * canvas.height
-        this.size = Math.random() * 3 + 1
+        const width = canvas?.width || window.innerWidth;
+        const height = canvas?.height || window.innerHeight;
+        
+        this.x = Math.random() * width;
+        this.y = Math.random() * height;
+        this.size = Math.random() * 3 + 1;
         // Slower movement for better performance
         this.speedX = Math.random() * 0.5 - 0.25
         this.speedY = Math.random() * 0.5 - 0.25
@@ -55,15 +58,18 @@ export function BackgroundAnimation() {
       }
 
       update(deltaTime: number, mouseX: number = 0, mouseY: number = 0) {
+        const width = canvas?.width || window.innerWidth;
+        const height = canvas?.height || window.innerHeight;
+        
         // Simplified update with delta time for consistent speed
         this.x += this.speedX * (deltaTime / 16)
         this.y += this.speedY * (deltaTime / 16)
 
         // Simplified boundary check
-        if (this.x < 0) this.x = canvas.width
-        if (this.x > canvas.width) this.x = 0
-        if (this.y < 0) this.y = canvas.height
-        if (this.y > canvas.height) this.y = 0
+        if (this.x < 0) this.x = width;
+        if (this.x > width) this.x = 0;
+        if (this.y < 0) this.y = height;
+        if (this.y > height) this.y = 0;
         
         // Much more subtle mouse interaction, only for close particles
         const dx = mouseX - this.x
@@ -171,7 +177,7 @@ export function BackgroundAnimation() {
     }
 
     // Handle window resize with throttling
-    let resizeTimeout: NodeJS.Timeout | null = null
+    let resizeTimeout: any = null
     const handleResize = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout)
       
