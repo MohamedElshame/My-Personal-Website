@@ -2,6 +2,11 @@
 
 import { type ReactNode, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { FacebookAnimation } from "./animations/FacebookAnimation"
+import { InstagramAnimation } from "./animations/InstagramAnimation"
+import { GithubAnimation } from "./animations/GithubAnimation"
+import { LinkedInAnimation } from "./animations/LinkedInAnimation"
+import { TikTokAnimation } from "./animations/TikTokAnimation"
 
 export interface SocialButtonProps {
   platform: "facebook" | "instagram" | "instagram2" | "github" | "linkedin" | "tiktok" | "medium"
@@ -13,18 +18,18 @@ export interface SocialButtonProps {
 export function SocialButton({ platform, icon, url, color }: SocialButtonProps) {
   const [showAnimation, setShowAnimation] = useState(false)
   const [isHovered, setIsHovered] = useState(false)
-  const [isLeavingPage, setIsLeavingPage] = useState(false)
 
   const handleClick = () => {
     setShowAnimation(true)
-    // We'll redirect after the animation
+    // نحن نؤخر إعادة توجيه المستخدم حتى تنتهي الرسوم المتحركة
+  }
+
+  const handleAnimationComplete = () => {
+    // بعد اكتمال الرسوم المتحركة، نقوم بإعادة توجيه المستخدم إلى الرابط
+    window.open(url, "_blank", "noopener,noreferrer")
     setTimeout(() => {
-      window.open(url, "_blank", "noopener,noreferrer")
-      // Reset animation state
-      setTimeout(() => {
-        setShowAnimation(false)
-      }, 100)
-    }, 300)
+      setShowAnimation(false)
+    }, 100)
   }
 
   // Get specific configuration based on platform
@@ -78,8 +83,71 @@ export function SocialButton({ platform, icon, url, color }: SocialButtonProps) 
 
   const config = getPlatformConfig()
 
+  // عرض الرسوم المتحركة المناسبة بناءً على المنصة
+  const renderAnimation = () => {
+    switch (platform) {
+      case 'facebook':
+        return <FacebookAnimation onComplete={handleAnimationComplete} />
+      case 'instagram':
+      case 'instagram2':
+        return <InstagramAnimation onComplete={handleAnimationComplete} />
+      case 'github':
+        return <GithubAnimation onComplete={handleAnimationComplete} />
+      case 'linkedin':
+        return <LinkedInAnimation onComplete={handleAnimationComplete} />
+      case 'tiktok':
+        return <TikTokAnimation onComplete={handleAnimationComplete} />
+      case 'medium':
+        // استخدام رسوم متحركة أبسط للمنصات التي ليس لديها مكون مخصص
+        return (
+          <motion.div
+            className="fixed inset-0 flex items-center justify-center bg-gradient-to-br from-green-700 via-green-600 to-green-500 z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.5 }}
+            onAnimationComplete={handleAnimationComplete}
+          >
+            <motion.div 
+              initial={{ scale: 0 }} 
+              animate={{ scale: 1 }} 
+              className="text-white"
+            >
+              <motion.div
+                animate={{
+                  rotate: [0, 360],
+                  scale: [1, 1.2, 1],
+                }}
+                transition={{
+                  rotate: { repeat: 1, duration: 1 },
+                  scale: { repeat: 1, duration: 1 },
+                }}
+                className="rounded-xl p-2 bg-green-700"
+              >
+                {icon}
+              </motion.div>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.5 }}
+                className="mt-4 text-xl font-bold text-center"
+              >
+                Loading Medium...
+              </motion.p>
+            </motion.div>
+          </motion.div>
+        )
+      default:
+        return null
+    }
+  }
+
   return (
     <div className="relative">
+      <AnimatePresence>
+        {showAnimation && renderAnimation()}
+      </AnimatePresence>
+
       <AnimatePresence>
         {isHovered && (
           <motion.div
