@@ -6,212 +6,213 @@ import { motion } from "framer-motion"
 export function BackgroundAnimation() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-
+  const animationFrameRef = useRef<number>(0)
+  const particlesRef = useRef<Particle[]>([])
+  const lastUpdateTimeRef = useRef<number>(0)
+  
   useEffect(() => {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext("2d")
+    const ctx = canvas.getContext("2d", { alpha: false })
     if (!ctx) return
 
-    canvas.width = window.innerWidth
-    canvas.height = window.innerHeight
+    // Set canvas size
+    const updateCanvasSize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+    }
+    
+    updateCanvasSize()
 
-    const particles: Particle[] = []
-    const particleCount = Math.min(150, Math.floor((canvas.width * canvas.height) / 10000))
-    const colors = ["#ff9a9e", "#fad0c4", "#ffecd2", "#fcb69f", "#a18cd1", "#fbc2eb", "#8fd3f4", "#84fab0"]
+    // Calculate optimal particle count based on screen size
+    // Significantly reduced number of particles
+    const calculateParticleCount = () => {
+      const area = canvas.width * canvas.height
+      // Much lower density for better performance
+      return Math.min(60, Math.floor(area / 25000))
+    }
+    
+    const colors = ["#ff9a9e", "#fad0c4", "#ffecd2", "#fcb69f", "#a18cd1", "#fbc2eb"]
 
     class Particle {
       x: number
       y: number
       size: number
-      baseSize: number
       speedX: number
       speedY: number
       color: string
-      angle: number
-      spin: number
-      flickerSpeed: number
-      flickerDirection: number
-      flicker: number
-      originalX: number
-      originalY: number
-      oscillationRadius: number
-      oscillationSpeed: number
-      oscillationAngle: number
+      // Removed many complex properties to improve performance
 
       constructor() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.originalX = this.x
-        this.originalY = this.y
-        this.baseSize = Math.random() * 4 + 1
-        this.size = this.baseSize
-        this.speedX = Math.random() * 2 - 1
-        this.speedY = Math.random() * 2 - 1
+        this.size = Math.random() * 3 + 1
+        // Slower movement for better performance
+        this.speedX = Math.random() * 0.5 - 0.25
+        this.speedY = Math.random() * 0.5 - 0.25
         this.color = colors[Math.floor(Math.random() * colors.length)]
-        this.angle = Math.random() * Math.PI * 2
-        this.spin = (Math.random() * 0.1 - 0.05) * 0.5
-        this.flickerSpeed = Math.random() * 0.01 + 0.005
-        this.flickerDirection = 1
-        this.flicker = 0
-        this.oscillationRadius = Math.random() * 50 + 20
-        this.oscillationSpeed = Math.random() * 0.002 + 0.001
-        this.oscillationAngle = Math.random() * Math.PI * 2
       }
 
-      update(mouseX: number, mouseY: number) {
-        // Respond to mouse position
+      update(deltaTime: number, mouseX: number = 0, mouseY: number = 0) {
+        // Simplified update with delta time for consistent speed
+        this.x += this.speedX * (deltaTime / 16)
+        this.y += this.speedY * (deltaTime / 16)
+
+        // Simplified boundary check
+        if (this.x < 0) this.x = canvas.width
+        if (this.x > canvas.width) this.x = 0
+        if (this.y < 0) this.y = canvas.height
+        if (this.y > canvas.height) this.y = 0
+        
+        // Much more subtle mouse interaction, only for close particles
         const dx = mouseX - this.x
         const dy = mouseY - this.y
         const distance = Math.sqrt(dx * dx + dy * dy)
-        const maxDistance = 200
-        
-        if (distance < maxDistance) {
-          const force = (1 - distance / maxDistance) * 0.2
-          this.x -= dx * force
-          this.y -= dy * force
-        } else {
-          // Return to original position with oscillation
-          this.oscillationAngle += this.oscillationSpeed
-          const targetX = this.originalX + Math.cos(this.oscillationAngle) * this.oscillationRadius
-          const targetY = this.originalY + Math.sin(this.oscillationAngle) * this.oscillationRadius
-          
-          this.x += (targetX - this.x) * 0.01
-          this.y += (targetY - this.y) * 0.01
+        if (distance < 80) {
+          // Very minimal effect
+          this.x -= (dx / distance) * 0.2
+          this.y -= (dy / distance) * 0.2
         }
-
-        // Boundary check
-        if (this.x < 0) this.x = 0
-        if (this.x > canvas.width) this.x = canvas.width
-        if (this.y < 0) this.y = 0
-        if (this.y > canvas.height) this.y = canvas.height
-
-        // Flicker effect
-        this.flicker += this.flickerSpeed * this.flickerDirection
-        if (this.flicker > 0.5 || this.flicker < 0) {
-          this.flickerDirection *= -1
-        }
-        this.size = this.baseSize * (1 + this.flicker * 0.3)
-
-        // Spin effect
-        this.angle += this.spin
       }
 
-      draw() {
-        if (!ctx) return
-        ctx.save()
-        
-        // Create a glow effect
-        ctx.shadowBlur = this.size * 2
-        ctx.shadowColor = this.color
-        
+      draw(ctx: CanvasRenderingContext2D) {
+        // Simplified drawing without glow effects
         ctx.fillStyle = this.color
-        ctx.globalAlpha = 0.7 + this.flicker * 0.3
-        
         ctx.beginPath()
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
-        ctx.closePath()
         ctx.fill()
-        
-        ctx.restore()
       }
     }
 
-    function init() {
-      for (let i = 0; i < particleCount; i++) {
-        particles.push(new Particle())
+    const initParticles = () => {
+      const count = calculateParticleCount()
+      particlesRef.current = []
+      for (let i = 0; i < count; i++) {
+        particlesRef.current.push(new Particle())
       }
     }
 
-    function animate() {
+    const clearCanvas = () => {
       if (!ctx) return
-      
-      // Clear with a fade effect for smoother transitions
-      ctx.fillStyle = "rgba(20, 30, 48, 0.15)"
+      // Solid background for better performance
+      ctx.fillStyle = "rgb(10, 15, 30)"
       ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-      // Get current mouse position from state
-      const { x: mouseX, y: mouseY } = mousePosition
-
-      for (let i = 0; i < particles.length; i++) {
-        particles[i].update(mouseX, mouseY)
-        particles[i].draw()
-      }
-
-      // Connect particles with lines - only connect nearby particles to improve performance
-      connectParticles()
-
-      requestAnimationFrame(animate)
     }
 
-    function connectParticles() {
-      const maxDistance = canvas.width > 1000 ? 120 : 80
+    const connectParticles = (particles: Particle[]) => {
+      // Reduced max distance for fewer connections
+      const maxDistance = canvas.width > 1000 ? 80 : 60
+      const particleCount = particles.length
       
-      for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.1)"
+      ctx.lineWidth = 0.3
+      
+      // Connect only a subset of particles for better performance
+      for (let i = 0; i < particleCount; i += 2) {
+        for (let j = i + 1; j < particleCount; j += 2) {
           const dx = particles[i].x - particles[j].x
           const dy = particles[i].y - particles[j].y
           const distance = Math.sqrt(dx * dx + dy * dy)
 
           if (distance < maxDistance) {
-            if (!ctx) return
             const opacity = 1 - distance / maxDistance
-            const gradient = ctx.createLinearGradient(
-              particles[i].x,
-              particles[i].y,
-              particles[j].x,
-              particles[j].y
-            )
-            
-            gradient.addColorStop(0, `rgba(255, 255, 255, ${opacity * 0.2})`)
-            gradient.addColorStop(1, `rgba(255, 255, 255, ${opacity * 0.05})`)
-            
+            ctx.globalAlpha = opacity * 0.2
             ctx.beginPath()
-            ctx.strokeStyle = gradient
-            ctx.lineWidth = opacity * 0.5
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
             ctx.stroke()
-            ctx.closePath()
           }
         }
       }
+      ctx.globalAlpha = 1
     }
 
-    init()
-    animate()
+    const animate = (timestamp: number) => {
+      if (!ctx) return
+      
+      // Calculate delta time for smooth animation regardless of frame rate
+      const deltaTime = lastUpdateTimeRef.current ? timestamp - lastUpdateTimeRef.current : 16
+      lastUpdateTimeRef.current = timestamp
+      
+      // Only update every other frame for better performance
+      const frameSkip = Math.floor(timestamp / 100) % 2 === 0
+      
+      if (!frameSkip) {
+        clearCanvas()
+        
+        const { x: mouseX, y: mouseY } = mousePosition
+        const particles = particlesRef.current
+        
+        // Update particles
+        for (let i = 0; i < particles.length; i++) {
+          particles[i].update(deltaTime, mouseX, mouseY)
+          particles[i].draw(ctx)
+        }
+        
+        // Only connect particles every few frames for better performance
+        if (Math.floor(timestamp / 200) % 2 === 0) {
+          connectParticles(particles)
+        }
+      }
+      
+      animationFrameRef.current = requestAnimationFrame(animate)
+    }
 
+    // Throttle mouse move events
+    let lastMoveTime = 0
     const handleMouseMove = (e: MouseEvent) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
+      const now = Date.now()
+      // Only update mouse position every 50ms for better performance
+      if (now - lastMoveTime > 50) {
+        setMousePosition({ x: e.clientX, y: e.clientY })
+        lastMoveTime = now
+      }
     }
 
+    // Handle window resize with throttling
+    let resizeTimeout: NodeJS.Timeout | null = null
     const handleResize = () => {
-      canvas.width = window.innerWidth
-      canvas.height = window.innerHeight
+      if (resizeTimeout) clearTimeout(resizeTimeout)
+      
+      resizeTimeout = setTimeout(() => {
+        updateCanvasSize()
+        initParticles()
+      }, 200)
     }
-
-    window.addEventListener("mousemove", handleMouseMove)
-    window.addEventListener("resize", handleResize)
-
-    // Handle touch events for mobile devices
+    
+    // Handle touch events with throttling
     const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length > 0) {
+      const now = Date.now()
+      if (e.touches.length > 0 && now - lastMoveTime > 50) {
         setMousePosition({ 
           x: e.touches[0].clientX, 
           y: e.touches[0].clientY 
         })
+        lastMoveTime = now
       }
     }
     
-    window.addEventListener("touchmove", handleTouchMove)
+    // Initialize and start animation
+    initParticles()
+    animationFrameRef.current = requestAnimationFrame(animate)
+    
+    // Add event listeners
+    window.addEventListener("mousemove", handleMouseMove, { passive: true })
+    window.addEventListener("resize", handleResize, { passive: true })
+    window.addEventListener("touchmove", handleTouchMove, { passive: true })
 
     return () => {
+      // Clean up
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
       window.removeEventListener("mousemove", handleMouseMove)
       window.removeEventListener("resize", handleResize)
       window.removeEventListener("touchmove", handleTouchMove)
+      if (resizeTimeout) clearTimeout(resizeTimeout)
     }
-  }, [mousePosition])
+  }, [])
 
   return (
     <motion.canvas
