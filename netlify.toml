@@ -5,31 +5,3 @@
 [[plugins]]
   package = "@netlify/plugin-nextjs"
 
-# Optimize caching for better performance
-[[headers]]
-  for = "/*"
-  [headers.values]
-    Cache-Control = "public, max-age=3600"
-    X-Frame-Options = "DENY"
-    X-XSS-Protection = "1; mode=block"
-
-# Optimize caching for static assets
-[[headers]]
-  for = "/_next/static/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Optimize caching for images
-[[headers]]
-  for = "/images/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Handle SPA routing
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
-  force = false
-  conditions = {Role = ["anonymous"]}
-
