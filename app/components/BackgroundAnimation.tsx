@@ -17,44 +17,29 @@ export function BackgroundAnimation() {
     canvas.height = window.innerHeight
 
     const particles: Particle[] = []
-    const particleCount = 200
-    const colors = ["#ff9a9e", "#fad0c4", "#ffecd2", "#fcb69f", "#a18cd1", "#fbc2eb", "#8fd3f4", "#84fab0"]
+    const particleCount = 150
+    const colors = ["#ff9a9e", "#fad0c4", "#ffecd2", "#fcb69f", "#a18cd1", "#fbc2eb"]
 
     class Particle {
       x: number
       y: number
       size: number
-      baseSize: number
       speedX: number
       speedY: number
       color: string
-      pulseDirection: boolean
-      pulseSpeed: number
 
       constructor() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.baseSize = Math.random() * 5 + 1
-        this.size = this.baseSize
+        this.size = Math.random() * 5 + 1
         this.speedX = Math.random() * 3 - 1.5
         this.speedY = Math.random() * 3 - 1.5
         this.color = colors[Math.floor(Math.random() * colors.length)]
-        this.pulseDirection = Math.random() > 0.5
-        this.pulseSpeed = Math.random() * 0.05 + 0.01
       }
 
       update() {
         this.x += this.speedX
         this.y += this.speedY
-
-        // Pulse size effect
-        if (this.pulseDirection) {
-          this.size += this.pulseSpeed
-          if (this.size > this.baseSize * 1.5) this.pulseDirection = false
-        } else {
-          this.size -= this.pulseSpeed
-          if (this.size < this.baseSize * 0.5) this.pulseDirection = true
-        }
 
         if (this.x < 0 || this.x > canvas.width) this.speedX *= -1
         if (this.y < 0 || this.y > canvas.height) this.speedY *= -1
@@ -82,9 +67,8 @@ export function BackgroundAnimation() {
 
       // Create gradient background
       const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
-      gradient.addColorStop(0, "rgba(20, 30, 48, 0.95)")
-      gradient.addColorStop(0.5, "rgba(36, 59, 85, 0.95)")
-      gradient.addColorStop(1, "rgba(20, 30, 48, 0.95)")
+      gradient.addColorStop(0, "rgba(20, 30, 48, 1)")
+      gradient.addColorStop(1, "rgba(36, 59, 85, 1)")
 
       ctx.fillStyle = gradient
       ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -101,7 +85,7 @@ export function BackgroundAnimation() {
     }
 
     function connectParticles() {
-      const maxDistance = 180
+      const maxDistance = 150
       for (let i = 0; i < particles.length; i++) {
         for (let j = i; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x
@@ -110,10 +94,9 @@ export function BackgroundAnimation() {
 
           if (distance < maxDistance) {
             if (!ctx) return
-            const opacity = 1 - distance / maxDistance
             ctx.beginPath()
-            ctx.strokeStyle = `rgba(255, 255, 255, ${opacity * 0.8})`
-            ctx.lineWidth = 0.5 * opacity
+            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / maxDistance})`
+            ctx.lineWidth = 0.5
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
             ctx.stroke()

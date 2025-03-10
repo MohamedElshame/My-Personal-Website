@@ -19,7 +19,6 @@ body {
   background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
-  background-clip: text;
 }
 
 .glass-morphism {
@@ -27,7 +26,6 @@ body {
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
 @keyframes float {
@@ -44,45 +42,5 @@ body {
 
 .floating {
   animation: float 6s ease-in-out infinite;
-}
-
-/* Improved animations */
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 1;
-    transform: scale(1);
-  }
-  50% {
-    opacity: 0.8;
-    transform: scale(1.05);
-  }
-}
-
-.pulse {
-  animation: pulse 3s ease-in-out infinite;
-}
-
-/* Improved transitions */
-.transition-all {
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 300ms;
-}
-
-/* Responsive improvements */
-@media (max-width: 640px) {
-  .gradient-text {
-    background: linear-gradient(90deg, #ff9a9e 0%, #fad0c4 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-}
-
-/* Fix for React Icons */
-.react-icons {
-  display: inline-block;
-  vertical-align: middle;
 }
 
