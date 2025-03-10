@@ -11,9 +11,14 @@ export function MediumAnimation({ onComplete }: { onComplete: () => void }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
-      onAnimationComplete={onComplete}
     >
-      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ duration: 0.5 }} className="text-black">
+      <motion.div
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="text-black"
+        onAnimationComplete={onComplete}
+      >
         <motion.div
           animate={{
             y: [0, -10, 0],
@@ -33,12 +38,52 @@ export function MediumAnimation({ onComplete }: { onComplete: () => void }) {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
         >
-          <motion.div
-            className="flex items-center space-x-2"
-            initial={{ x: -50, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.7 }}
-          >
+          {/* Typewriter with poetry */}
+          <motion.div className="w-80 max-w-full bg-gray-100 rounded-md p-6 font-serif relative">
+            <motion.div
+              className="absolute top-6 left-6 right-6"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+            >
+              <motion.p
+                initial={{ width: 0 }}
+                animate={{ width: "auto" }}
+                transition={{ delay: 0.8, duration: 1.5 }}
+                className="overflow-hidden whitespace-nowrap text-lg italic"
+              >
+                Words dance across the page,
+              </motion.p>
+
+              <motion.p
+                initial={{ width: 0 }}
+                animate={{ width: "auto" }}
+                transition={{ delay: 2.3, duration: 1.5 }}
+                className="overflow-hidden whitespace-nowrap mt-2 text-lg italic"
+              >
+                Like stars in the night sky,
+              </motion.p>
+
+              <motion.p
+                initial={{ width: 0 }}
+                animate={{ width: "auto" }}
+                transition={{ delay: 3.8, duration: 1.5 }}
+                className="overflow-hidden whitespace-nowrap mt-2 text-lg italic"
+              >
+                Illuminating thoughts.
+              </motion.p>
+            </motion.div>
+
+            <motion.div
+              className="absolute bottom-6 right-6 w-3 h-5 bg-black"
+              animate={{
+                opacity: [1, 0, 1, 0, 1, 0, 1, 0],
+              }}
+              transition={{ delay: 0.8, duration: 2, repeat: 2 }}
+            />
+          </motion.div>
+
+          <motion.div className="mt-6 flex items-center space-x-2">
             <FaPen size={16} />
             <motion.div
               className="h-0.5 w-0 bg-black"
@@ -51,9 +96,9 @@ export function MediumAnimation({ onComplete }: { onComplete: () => void }) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 1.5 }}
-            className="mt-4 text-center"
+            className="mt-4 text-center font-medium"
           >
-            Exploring stories and ideas...
+            Crafting stories that inspire...
           </motion.p>
         </motion.div>
       </motion.div>
