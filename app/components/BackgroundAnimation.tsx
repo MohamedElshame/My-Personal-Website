@@ -1,10 +1,11 @@
 "use client"
 
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 import { motion } from "framer-motion"
 
 export function BackgroundAnimation() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
   useEffect(() => {
     const canvas = canvasRef.current
@@ -17,41 +18,103 @@ export function BackgroundAnimation() {
     canvas.height = window.innerHeight
 
     const particles: Particle[] = []
-    const particleCount = 150
-    const colors = ["#ff9a9e", "#fad0c4", "#ffecd2", "#fcb69f", "#a18cd1", "#fbc2eb"]
+    const particleCount = Math.min(150, Math.floor((canvas.width * canvas.height) / 10000))
+    const colors = ["#ff9a9e", "#fad0c4", "#ffecd2", "#fcb69f", "#a18cd1", "#fbc2eb", "#8fd3f4", "#84fab0"]
 
     class Particle {
       x: number
       y: number
       size: number
+      baseSize: number
       speedX: number
       speedY: number
       color: string
+      angle: number
+      spin: number
+      flickerSpeed: number
+      flickerDirection: number
+      flicker: number
+      originalX: number
+      originalY: number
+      oscillationRadius: number
+      oscillationSpeed: number
+      oscillationAngle: number
 
       constructor() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.size = Math.random() * 5 + 1
-        this.speedX = Math.random() * 3 - 1.5
-        this.speedY = Math.random() * 3 - 1.5
+        this.originalX = this.x
+        this.originalY = this.y
+        this.baseSize = Math.random() * 4 + 1
+        this.size = this.baseSize
+        this.speedX = Math.random() * 2 - 1
+        this.speedY = Math.random() * 2 - 1
         this.color = colors[Math.floor(Math.random() * colors.length)]
+        this.angle = Math.random() * Math.PI * 2
+        this.spin = (Math.random() * 0.1 - 0.05) * 0.5
+        this.flickerSpeed = Math.random() * 0.01 + 0.005
+        this.flickerDirection = 1
+        this.flicker = 0
+        this.oscillationRadius = Math.random() * 50 + 20
+        this.oscillationSpeed = Math.random() * 0.002 + 0.001
+        this.oscillationAngle = Math.random() * Math.PI * 2
       }
 
-      update() {
-        this.x += this.speedX
-        this.y += this.speedY
+      update(mouseX: number, mouseY: number) {
+        // Respond to mouse position
+        const dx = mouseX - this.x
+        const dy = mouseY - this.y
+        const distance = Math.sqrt(dx * dx + dy * dy)
+        const maxDistance = 200
+        
+        if (distance < maxDistance) {
+          const force = (1 - distance / maxDistance) * 0.2
+          this.x -= dx * force
+          this.y -= dy * force
+        } else {
+          // Return to original position with oscillation
+          this.oscillationAngle += this.oscillationSpeed
+          const targetX = this.originalX + Math.cos(this.oscillationAngle) * this.oscillationRadius
+          const targetY = this.originalY + Math.sin(this.oscillationAngle) * this.oscillationRadius
+          
+          this.x += (targetX - this.x) * 0.01
+          this.y += (targetY - this.y) * 0.01
+        }
 
-        if (this.x < 0 || this.x > canvas.width) this.speedX *= -1
-        if (this.y < 0 || this.y > canvas.height) this.speedY *= -1
+        // Boundary check
+        if (this.x < 0) this.x = 0
+        if (this.x > canvas.width) this.x = canvas.width
+        if (this.y < 0) this.y = 0
+        if (this.y > canvas.height) this.y = canvas.height
+
+        // Flicker effect
+        this.flicker += this.flickerSpeed * this.flickerDirection
+        if (this.flicker > 0.5 || this.flicker < 0) {
+          this.flickerDirection *= -1
+        }
+        this.size = this.baseSize * (1 + this.flicker * 0.3)
+
+        // Spin effect
+        this.angle += this.spin
       }
 
       draw() {
         if (!ctx) return
+        ctx.save()
+        
+        // Create a glow effect
+        ctx.shadowBlur = this.size * 2
+        ctx.shadowColor = this.color
+        
         ctx.fillStyle = this.color
+        ctx.globalAlpha = 0.7 + this.flicker * 0.3
+        
         ctx.beginPath()
         ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2)
         ctx.closePath()
         ctx.fill()
+        
+        ctx.restore()
       }
     }
 
@@ -63,40 +126,50 @@ export function BackgroundAnimation() {
 
     function animate() {
       if (!ctx) return
-      ctx.clearRect(0, 0, canvas.width, canvas.height)
-
-      // Create gradient background
-      const gradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height)
-      gradient.addColorStop(0, "rgba(20, 30, 48, 1)")
-      gradient.addColorStop(1, "rgba(36, 59, 85, 1)")
-
-      ctx.fillStyle = gradient
+      
+      // Clear with a fade effect for smoother transitions
+      ctx.fillStyle = "rgba(20, 30, 48, 0.15)"
       ctx.fillRect(0, 0, canvas.width, canvas.height)
 
+      // Get current mouse position from state
+      const { x: mouseX, y: mouseY } = mousePosition
+
       for (let i = 0; i < particles.length; i++) {
-        particles[i].update()
+        particles[i].update(mouseX, mouseY)
         particles[i].draw()
       }
 
-      // Connect particles with lines
+      // Connect particles with lines - only connect nearby particles to improve performance
       connectParticles()
 
       requestAnimationFrame(animate)
     }
 
     function connectParticles() {
-      const maxDistance = 150
+      const maxDistance = canvas.width > 1000 ? 120 : 80
+      
       for (let i = 0; i < particles.length; i++) {
-        for (let j = i; j < particles.length; j++) {
+        for (let j = i + 1; j < particles.length; j++) {
           const dx = particles[i].x - particles[j].x
           const dy = particles[i].y - particles[j].y
           const distance = Math.sqrt(dx * dx + dy * dy)
 
           if (distance < maxDistance) {
             if (!ctx) return
+            const opacity = 1 - distance / maxDistance
+            const gradient = ctx.createLinearGradient(
+              particles[i].x,
+              particles[i].y,
+              particles[j].x,
+              particles[j].y
+            )
+            
+            gradient.addColorStop(0, `rgba(255, 255, 255, ${opacity * 0.2})`)
+            gradient.addColorStop(1, `rgba(255, 255, 255, ${opacity * 0.05})`)
+            
             ctx.beginPath()
-            ctx.strokeStyle = `rgba(255, 255, 255, ${1 - distance / maxDistance})`
-            ctx.lineWidth = 0.5
+            ctx.strokeStyle = gradient
+            ctx.lineWidth = opacity * 0.5
             ctx.moveTo(particles[i].x, particles[i].y)
             ctx.lineTo(particles[j].x, particles[j].y)
             ctx.stroke()
@@ -109,17 +182,36 @@ export function BackgroundAnimation() {
     init()
     animate()
 
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY })
+    }
+
     const handleResize = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
     }
 
+    window.addEventListener("mousemove", handleMouseMove)
     window.addEventListener("resize", handleResize)
 
-    return () => {
-      window.removeEventListener("resize", handleResize)
+    // Handle touch events for mobile devices
+    const handleTouchMove = (e: TouchEvent) => {
+      if (e.touches.length > 0) {
+        setMousePosition({ 
+          x: e.touches[0].clientX, 
+          y: e.touches[0].clientY 
+        })
+      }
     }
-  }, [])
+    
+    window.addEventListener("touchmove", handleTouchMove)
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove)
+      window.removeEventListener("resize", handleResize)
+      window.removeEventListener("touchmove", handleTouchMove)
+    }
+  }, [mousePosition])
 
   return (
     <motion.canvas
@@ -131,4 +223,3 @@ export function BackgroundAnimation() {
     />
   )
 }
-
